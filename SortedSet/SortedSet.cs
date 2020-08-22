@@ -8,14 +8,13 @@ namespace Set
     public class SortedSet<T> : IEnumerable<T>, ISortedSet<T>
     {
         private LeftLeaningRedBlackTree<T> _tree;
-        private readonly IComparer<T> _comparer;
-
+        public IComparer<T> Comparer { get; }
         public int Count => _tree.Count;
 
         public SortedSet(IComparer<T> comparer)
         {
-            _comparer = comparer ?? Comparer<T>.Default;
-            _tree = new LeftLeaningRedBlackTree<T>(_comparer);
+            Comparer = comparer ?? Comparer<T>.Default;
+            _tree = new LeftLeaningRedBlackTree<T>(Comparer);
         }
 
         public SortedSet() : this(null)
@@ -24,7 +23,7 @@ namespace Set
 
         public void Clear()
         {
-            _tree = new LeftLeaningRedBlackTree<T>(_comparer);
+            _tree = new LeftLeaningRedBlackTree<T>(Comparer);
         }
 
         public bool Add(T item)
@@ -123,14 +122,14 @@ namespace Set
             }
 
             // equal key
-            if (_comparer.Compare(item, node.Value) == 0)
+            if (Comparer.Compare(item, node.Value) == 0)
             {
                 return node;
             }
 
 
             // if nodes key is larger, it must be in the left subtree
-            if (_comparer.Compare(node.Value, item) > 0)
+            if (Comparer.Compare(node.Value, item) > 0)
             {
                 return Floor(node.Left, item);
             }
@@ -142,7 +141,7 @@ namespace Set
                 return node;
             }
 
-            return (_comparer.Compare(floor.Value, item) <= 0) ? floor : node;
+            return (Comparer.Compare(floor.Value, item) <= 0) ? floor : node;
         }
 
         private Node<T> Ceiling(Node<T> node, T item)
@@ -153,13 +152,13 @@ namespace Set
             }
 
             // found equal key
-            if (_comparer.Compare(node.Value, item) == 0)
+            if (Comparer.Compare(node.Value, item) == 0)
             {
                 return node;
             }
 
             // if node's key is smaller, it must be in the right subtree
-            if (_comparer.Compare(node.Value, item) < 0)
+            if (Comparer.Compare(node.Value, item) < 0)
             {
                 return Ceiling(node.Right, item);
             }
@@ -171,7 +170,7 @@ namespace Set
                 return node;
             }
 
-            return (_comparer.Compare(ceil.Value, item) >= 0) ? ceil : node;
+            return (Comparer.Compare(ceil.Value, item) >= 0) ? ceil : node;
         }
 
         public SortedSet<T> Union(SortedSet<T> other)
@@ -181,7 +180,7 @@ namespace Set
                 throw new ArgumentNullException(nameof(other));
             }
 
-            SortedSet<T> newset = new SortedSet<T>(_comparer);
+            SortedSet<T> newset = new SortedSet<T>(Comparer);
             newset.AddRange(this);
             newset.AddRange(other);
 
@@ -195,7 +194,7 @@ namespace Set
                 throw new ArgumentNullException(nameof(other));
             }
 
-            SortedSet<T> newset = new SortedSet<T>(_comparer);
+            SortedSet<T> newset = new SortedSet<T>(Comparer);
 
             // pick and loop over the smaller of two sets
             if (Count < other.Count)

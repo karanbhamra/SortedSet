@@ -3,7 +3,8 @@
 namespace Set
 {
     public interface ISortedSet<T>
-    {
+    { 
+        IComparer<T> Comparer { get; }
         int Count { get; }
         void Clear();
         bool Add(T item);
