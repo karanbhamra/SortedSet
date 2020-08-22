@@ -1,98 +1,101 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 
 namespace Set
 {
-    public class SortedSet<T> : IEnumerable<T>
+    public class SortedSet<T> : IEnumerable<T>, ISortedSet<T>
     {
-        LeftLeaningRedBlackTree<T> tree;
-        IComparer<T> comparer;
+        private LeftLeaningRedBlackTree<T> _tree;
+        private readonly IComparer<T> _comparer;
 
-        public int Count => tree.Count;
+        public int Count => _tree.Count;
 
         public SortedSet(IComparer<T> comparer)
         {
-            this.comparer = comparer ?? Comparer<T>.Default;
-            tree = new LeftLeaningRedBlackTree<T>(comparer);
+            _comparer = comparer ?? Comparer<T>.Default;
+            _tree = new LeftLeaningRedBlackTree<T>(_comparer);
         }
 
         public SortedSet() : this(null)
         {
         }
 
+        public void Clear()
+        {
+            _tree = new LeftLeaningRedBlackTree<T>(_comparer);
+        }
+
         public bool Add(T item)
         {
             if (item == null)
             {
-                throw new ArgumentNullException("Called Add with null value.");
+                throw new ArgumentNullException(nameof(item));
             }
 
-            bool success = true;
-            try
+            if (Contains(item))
             {
-                tree.Add(item);
-            }
-            catch (ArgumentException)
-            {
-                success = false;
+                return false;
             }
 
-            return success;
+            _tree.Add(item);
+            return true;
         }
 
         public bool Contains(T item)
         {
             if (item == null)
             {
-                throw new ArgumentNullException("Called Contains with null value.");
+                throw new ArgumentNullException(nameof(item));
             }
 
-            return tree.Contains(item);
+            return _tree.Contains(item);
         }
 
-        public bool Delete(T item)
+        public bool Remove(T item)
         {
             if (item == null)
             {
-                throw new ArgumentNullException("Called Remove with null value.");
+                throw new ArgumentNullException(nameof(item));
             }
 
-            return tree.Remove(item);
+            return _tree.Remove(item);
         }
 
         public T Max()
         {
             if (Count == 0)
             {
-                throw new Exception("Set is empty.");
+                throw new Exception("SortedSet is empty.");
             }
-            return tree.GetMaximum(tree.Root).Value;
+
+            return _tree.GetMaximum(_tree.Root).Value;
         }
 
         public T Min()
         {
             if (Count == 0)
             {
-                throw new Exception("Set is empty.");
+                throw new Exception("SortedSet is empty.");
             }
-            return tree.GetMinimum(tree.Root).Value;
+
+            return _tree.GetMinimum(_tree.Root).Value;
         }
 
         public T Ceiling(T item)
         {
             if (item == null)
             {
-                throw new ArgumentNullException("Called Ceiling with null value.");
+                throw new ArgumentNullException(nameof(item));
             }
 
-            var ceil = Ceiling(tree.Root, item);
+            var ceil = Ceiling(_tree.Root, item);
             if (ceil == null)
             {
                 throw new Exception($"All keys are less than {item}");
             }
+
             return ceil.Value;
         }
 
@@ -100,14 +103,15 @@ namespace Set
         {
             if (item == null)
             {
-                throw new ArgumentNullException("Called Floor with null value.");
+                throw new ArgumentNullException(nameof(item));
             }
 
-            var floor = Floor(tree.Root, item);
+            var floor = Floor(_tree.Root, item);
             if (floor == null)
             {
                 throw new Exception($"All keys are greater than {item}");
             }
+
             return floor.Value;
         }
 
@@ -119,14 +123,14 @@ namespace Set
             }
 
             // equal key
-            if (comparer.Compare(item, node.Value) == 0)
+            if (_comparer.Compare(item, node.Value) == 0)
             {
                 return node;
             }
 
 
             // if nodes key is larger, it must be in the left subtree
-            if (comparer.Compare(node.Value, item) > 0)
+            if (_comparer.Compare(node.Value, item) > 0)
             {
                 return Floor(node.Left, item);
             }
@@ -137,8 +141,8 @@ namespace Set
             {
                 return node;
             }
-            else
-                return (comparer.Compare(floor.Value, item) <= 0) ? floor : node;
+
+            return (_comparer.Compare(floor.Value, item) <= 0) ? floor : node;
         }
 
         private Node<T> Ceiling(Node<T> node, T item)
@@ -149,13 +153,13 @@ namespace Set
             }
 
             // found equal key
-            if (comparer.Compare(node.Value, item) == 0)
+            if (_comparer.Compare(node.Value, item) == 0)
             {
                 return node;
             }
 
             // if node's key is smaller, it must be in the right subtree
-            if (comparer.Compare(node.Value, item) < 0)
+            if (_comparer.Compare(node.Value, item) < 0)
             {
                 return Ceiling(node.Right, item);
             }
@@ -166,19 +170,18 @@ namespace Set
             {
                 return node;
             }
-            else
-                return (comparer.Compare(ceil.Value, item) >= 0) ? ceil : node;
 
+            return (_comparer.Compare(ceil.Value, item) >= 0) ? ceil : node;
         }
 
         public SortedSet<T> Union(SortedSet<T> other)
         {
             if (other == null)
             {
-                throw new ArgumentNullException("Other set cannot be null.");
+                throw new ArgumentNullException(nameof(other));
             }
 
-            SortedSet<T> newset = new SortedSet<T>(comparer);
+            SortedSet<T> newset = new SortedSet<T>(_comparer);
             newset.AddRange(this);
             newset.AddRange(other);
 
@@ -189,9 +192,10 @@ namespace Set
         {
             if (other == null)
             {
-                throw new ArgumentNullException("Other set cannot be null.");
+                throw new ArgumentNullException(nameof(other));
             }
-            SortedSet<T> newset = new SortedSet<T>(comparer);
+
+            SortedSet<T> newset = new SortedSet<T>(_comparer);
 
             // pick and loop over the smaller of two sets
             if (Count < other.Count)
@@ -208,7 +212,7 @@ namespace Set
             {
                 foreach (var item in other)
                 {
-                    if (this.Contains(item))
+                    if (Contains(item))
                     {
                         newset.Add(item);
                     }
@@ -222,7 +226,7 @@ namespace Set
         {
             if (items == null)
             {
-                throw new ArgumentNullException("Enumerable cannot be null.");
+                throw new ArgumentNullException(nameof(items));
             }
 
             foreach (var item in items)
@@ -236,7 +240,7 @@ namespace Set
         {
             var stack = new Stack<Node<T>>();
 
-            var node = tree.Root;
+            var node = _tree.Root;
 
             while (stack.Count > 0 || node != null)
             {
@@ -251,7 +255,6 @@ namespace Set
                     yield return node.Value;
                     node = node.Right;
                 }
-
             }
         }
 
@@ -259,17 +262,18 @@ namespace Set
 
         public override bool Equals(object other)
         {
-            if (other == null || this == null)
+            if (other == null)
             {
                 return false;
             }
-            else if (other == this)
+
+            if (other == this)
             {
                 return true;
             }
 
             var that = other as SortedSet<T>;
-            return Enumerable.SequenceEqual(this, that);
+            return this.SequenceEqual(that!);
         }
 
         public override int GetHashCode()
@@ -282,7 +286,6 @@ namespace Set
             }
 
             return hashCode.ToHashCode();
-
         }
 
         public override string ToString()
